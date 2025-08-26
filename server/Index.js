@@ -23,12 +23,13 @@ mongoose.connect(process.env.MONGO_URI, {
 .then(() => console.log('✅ اتصال به MongoDB برقرار شد'))
 .catch((err) => {
   console.error('❌ خطا در اتصال به MongoDB:', err);
-  process.exit(1); // اگر اتصال برقرار نشد سرور متوقف شود
+  process.exit(1);
 });
 
 // میدلورها
 app.use(cors());
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 // مسیر فایل‌های استاتیک عکس‌ها
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));

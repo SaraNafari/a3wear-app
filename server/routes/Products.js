@@ -3,50 +3,74 @@ import multer from 'multer';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import Product from '../models/Product.js';
+import fs from 'fs';
 
 const router = express.Router();
-
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-
 const uploadsPath = path.join(__dirname, '../uploads');
 
-// تنظیمات multer برای آپلود عکس
+if (!fs.existsSync(uploadsPath)) fs.mkdirSync(uploadsPath);
+
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, uploadsPath);
-  },
-  filename: (req, file, cb) => {
-    cb(null, Date.now() + '-' + file.originalname);
-  },
+  destination: (req, file, cb) => cb(null, uploadsPath),
+  filename: (req, file, cb) => cb(null, Date.now() + '-' + file.originalname),
 });
 const upload = multer({ storage });
 
-// روت افزودن محصول جدید با آپلود عکس
-router.post('/', upload.single('image'), async (req, res) => {
-  try {
-    const { name, price, category } = req.body;
-    const image = req.file ? `/uploads/${req.file.filename}` : '';
+const categoryMap = {
+  leggings: 'لگ',
+  crop: 'کراپ',
+  soutien: 'سوتین',
+  shorts: 'شرت',
+};
 
-    if (!name || !price || !category) {
-      return res.status(400).json({ error: 'فیلدهای name, price و category الزامی هستند.' });
+// افزودن محصول با چند عکس
+router.post(
+  '/',
+  upload.fields([
+    { name: 'mainImage', maxCount: 1 },
+    { name: 'images', maxCount: 5 },
+  ]),
+  async (req, res) => {
+    try {
+      const { name, price, category, colors, sizes, description } = req.body;
+
+      const mainImage = req.files?.mainImage?.[0]?.filename
+        ? `/uploads/${req.files.mainImage[0].filename}`
+        : '';
+
+      const images = req.files?.images?.map((file) => `/uploads/${file.filename}`) || [];
+
+      if (!name || !price || !category) {
+        return res.status(400).json({ error: 'فیلدهای name, price و category الزامی هستند.' });
+      }
+
+      const newProduct = new Product({
+        name,
+        price,
+        category,
+        mainImage,
+        images,
+        colors: colors ? colors.split(',').map((c) => c.trim()) : [],
+        sizes: sizes ? sizes.split(',').map((s) => s.trim()) : [],
+        description,
+      });
+
+      await newProduct.save();
+      res.status(201).json(newProduct);
+    } catch (err) {
+      console.error('❌ خطا در ثبت محصول:', err);
+      res.status(500).json({ error: 'خطا در ثبت محصول' });
     }
-
-    const newProduct = new Product({ name, price, category, image });
-    await newProduct.save();
-
-    res.status(201).json(newProduct);
-  } catch (err) {
-    console.error('❌ خطا در ثبت محصول:', err);
-    res.status(500).json({ error: 'خطا در ثبت محصول' });
   }
-});
+);
 
-// دریافت همه محصولات یا فیلتر بر اساس دسته (اختیاری)
+// دریافت محصولات
 router.get('/', async (req, res) => {
   try {
     const { category } = req.query;
-    const filter = category ? { category } : {};
+    const filter = category ? { category: categoryMap[category] } : {};
     const products = await Product.find(filter);
     res.json(products);
   } catch (err) {

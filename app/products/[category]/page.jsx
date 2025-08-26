@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
+import Link from 'next/link';
 
 export default function CategoryPage() {
   const { category } = useParams();
@@ -10,6 +11,8 @@ export default function CategoryPage() {
 
   useEffect(() => {
     if (!category) return;
+
+    // fetch همه محصولات آن دسته
     fetch(`http://localhost:5000/api/products?category=${category}`)
       .then((res) => res.json())
       .then((data) => {
@@ -25,33 +28,47 @@ export default function CategoryPage() {
   if (loading) return <p style={{ padding: 20 }}>در حال بارگذاری...</p>;
 
   return (
-    <div style={{ padding: '2rem' }}>
+    <div style={{ padding: '2rem', marginTop: '100px', fontFamily: 'Vazir' }}>
       <h1 style={{ fontSize: '2rem', marginBottom: '1.5rem' }}>
-        محصولات دسته {decodeURIComponent(category)}
+        محصولات دسته {category}
       </h1>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1.5rem' }}>
         {products.length === 0 ? (
           <p>محصولی یافت نشد</p>
         ) : (
           products.map((product) => (
-            <div
+            <Link
               key={product._id}
-              style={{
-                border: '1px solid #ccc',
-                borderRadius: '12px',
-                width: '220px',
-                padding: '1rem',
-                fontFamily: 'Vazir',
-              }}
+              href={`/products/${category}/${product._id}`}
+              style={{ textDecoration: 'none', color: 'inherit' }}
             >
-              <img
-                src={`http://localhost:5000/uploads/${product.image}`}
-                alt={product.name}
-                style={{ width: '100%', height: 'auto', borderRadius: '8px' }}
-              />
-              <h3 style={{ marginTop: '1rem' }}>{product.name}</h3>
-              <p>{product.price.toLocaleString()} تومان</p>
-            </div>
+              <div
+                style={{
+                  border: '1px solid #ccc',
+                  borderRadius: '12px',
+                  width: '220px',
+                  padding: '1rem',
+                  cursor: 'pointer',
+                  background: '#fff',
+                  transition: 'transform 0.2s',
+                }}
+              >
+                {product.mainImage && (
+                  <img
+                    src={`http://localhost:5000${product.mainImage}`}
+                    alt={product.name}
+                    style={{
+                      width: '100%',
+                      height: '200px',
+                      borderRadius: '8px',
+                      objectFit: 'cover',
+                    }}
+                  />
+                )}
+                <h3 style={{ marginTop: '1rem' }}>{product.name}</h3>
+                <p>{product.price.toLocaleString()} تومان</p>
+              </div>
+            </Link>
           ))
         )}
       </div>
