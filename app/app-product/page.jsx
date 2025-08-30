@@ -25,9 +25,10 @@ export default function AddProductPage() {
     formData.append('sizes', JSON.stringify(sizes.split(',')));
     formData.append('description', description);
 
-    for (let i = 0; i < images.length; i++) {
-      formData.append('images', images[i]);
-    }
+    // 🔹 اصلاح ارسال چند عکس
+    images.forEach((file) => {
+      formData.append('images', file);
+    });
 
     try {
       await axios.post('http://localhost:5000/api/products', formData);

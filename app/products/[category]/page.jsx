@@ -1,19 +1,30 @@
+  );
+}
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { useParams } from 'next/navigation';
 import Link from 'next/link';
+import { useParams } from 'next/navigation';
 
 export default function CategoryPage() {
   const { category } = useParams();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (!category) return;
+  // تبدیل دسته فارسی به انگلیسی برای API
+  const categoryMap = {
+    لگ: 'leggings',
+    کراپ: 'crop',
+    سوتین: 'soutien',
+    شرت: 'shorts',
+  };
 
-    // fetch همه محصولات آن دسته
-    fetch(`http://localhost:5000/api/products?category=${category}`)
+  const categoryEng = categoryMap[category];
+
+  useEffect(() => {
+    if (!categoryEng) return;
+
+    fetch(`http://localhost:5000/api/products?category=${categoryEng}`)
       .then((res) => res.json())
       .then((data) => {
         setProducts(data);
@@ -23,7 +34,7 @@ export default function CategoryPage() {
         console.error('Error fetching products:', err);
         setLoading(false);
       });
-  }, [category]);
+  }, [categoryEng]);
 
   if (loading) return <p style={{ padding: 20 }}>در حال بارگذاری...</p>;
 
@@ -39,7 +50,7 @@ export default function CategoryPage() {
           products.map((product) => (
             <Link
               key={product._id}
-              href={`/products/${category}/${product._id}`}
+              href={`/products/${categoryEng}/${product._id}`}
               style={{ textDecoration: 'none', color: 'inherit' }}
             >
               <div
